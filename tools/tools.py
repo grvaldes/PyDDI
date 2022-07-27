@@ -1,4 +1,3 @@
-from gettext import find
 import numpy as np
 
 # @func CPlaneStress: computes the D tensor for the elastic plane stress case.    
