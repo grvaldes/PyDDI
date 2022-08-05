@@ -5,13 +5,20 @@ class PropertiesObject:
 
     def __init__(self, sys, problemType, *, E = 1, Er = 1, CData = None, dt = None, forceType = None, C0 = 1, curvType = None, curvC = None, curvPts = None, steps = None, forceVal = None, testVal = 'XXYYSS'):
 
+        self.nStr = None
         self.nX = None
+        self.C0 = None
+        self.Er = Er
+
         self.F = None
         self.Fr = None
         self.rx = None
         self.uf = None
-        self.C0 = None
-        self.Er = Er
+        self.fp = []
+        self.up = []
+        self.rp = []
+        self.rl = []
+        self.fc = []
 
         if problemType == "DDCM":
             self.vC0 = np.ones(sys.nEl)

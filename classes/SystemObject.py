@@ -2,7 +2,7 @@ import numpy as np
 from scipy import sparse
 from functions.elements import *
 
-class System:
+class SystemObject:
 
     def __init__(self, problemType, elementType, materialType, meshFile, nGaussPoints = 1, verbose = True):
         self.problemType = problemType

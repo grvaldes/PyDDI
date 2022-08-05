@@ -1,6 +1,9 @@
+import time
 import numpy as np
+import scipy.linalg
 from scipy import sparse
-from classes import DataObject
+from classes import DataObject, MaterialDatabase, FemStressProjector, DDIObject
+
 
 def solveSystemLinearElasticFEM(sys, prop):
 
@@ -223,5 +226,145 @@ def solveSystemNonLinearElasticFEM(sys, prop, tolerance = 1e-8, maxIter = 100):
             sol[n].sig = prop.E(sol[n].eps[:,0], sol[n].eps[:,1], sol[n].eps[:,2]) * prop.vE
 
         un = un1.copy()
+
+    return sol
+
+
+def solveSystemDDI(sys, prop, sol, th=1, mxI=500, mxJ=500, EsTol=1e-6, SsTol=1e-6, rPCA=False, tPCA=0.9):
+
+    eex = sol.ee
+    sex = []
+    sts = []
+    ieM = []
+    wxe = np.diag(sys.W)
+
+    if rPCA:
+        sexP = []
+
+        for i in range(prop.nX):
+            sexP.append(0)
+
+    wDS = np.zeros(mxI)
+
+    tic = time.time()
+
+    if type(prop.C0) == tuple:
+        C0 = prop.C0[0]
+
+        for c in range(1,len(prop.C0)):
+            C0 = scipy.linalg.block_diag(C0, prop.C0[c])
+        
+        mdb = MaterialDatabase(prop.es, prop.ss, C0, np.linalg.inv(prop.C0[0]))
+    else:
+        C0 = np.kron(prop.C0, np.eye(prop.es.shape[1] / sys.comp))
+
+        mdb = MaterialDatabase(prop.es, prop.ss, C0, np.linalg.inv(prop.C0))
+
+    for i in range(prop.nX):
+        sex.append(0)
+        ieM.append(0)
+
+        sts.append(FemStressProjector(sys.B, sys.BW, prop.C0, np.ones(sys.W.shape), prop.rp[i], prop.rl[i]))
+        _, sex[i] = sts[i].project(prop.fp[i], prop.fc[i])
+        _, _, ieM[i], _ = mdb.project(eex[i], sex[i])
+
+    sol.init_clock = (time.time() - tic)
+
+    if sys.verbose:
+        print("\nPerforming DDI Algorithm")
+        print("Parameters used: ")
+        print("    C =", prop.C0)
+        print("    N* =", np.prod(prop.nStr), "\n")
+
+    rlEs = 1
+    whl = 0
+
+    if rPCA:
+        nv = []
+        L = []
+
+    tic = time.time()
+    while whl < mxI and rlEs > EsTol:
+        whl += 1
+
+        if sys.verbose:
+            print("Starting iteration #", whl)
+
+        iwhl = 0
+        rlSs = 1
+
+        while iwhl < mxJ and rlSs > SsTol:
+            if not rPCA:
+                for i in range(prop.nX):
+                    _, sex[i] = sts[i].project(ieM[i] @ mdb.fluxes, prop.fp[i], prop.fc[i])
+                    mdb.accumFluxes(sex[i], ieM[i], wxe)
+            else:
+                for i in range(prop.nX):
+                    _, sex[i] = sts[i].project(ieM[i] @ mdb.fluxes, prop.fp[i], prop.fc[i])
+                    sexP[i] = sex[i].ravel()
+
+                X, nv[whl], L[whl] = 0#PCAfiltering() #TODO
+
+                for i in range(prop.nX):
+                    sex[i] = X[:,i].reshape((-1, sys.comp))
+                    mdb.accumFluxes(sex[i], ieM[i], wxe)
+
+            rlSs = mdb.updateFluxes(th)
+
+        if sys.verbose:
+            if iwhl == mxJ:
+                print("    Number of max subiterations reached. Continuing with last value.")
+            else:
+                print("    Number of subiterations for stress:", iwhl)
+
+        for i in range(prop.nX):
+            mdb.accumForces(eex[i], ieM[i], wxe)
+
+        rlEs = mdb.updateForces(th)
+
+        if sys.verbose:
+            print("    Convergence coefficient for strain:", rlEs)
+
+        wDSt = 0
+
+        for i in range(prop.nX):
+            _, _, ieM[i], D = mdb.project(eex[i], sex[i])
+            wDSt += wxe @ D
+
+        wDS[whl] = wDSt
+        mask = mdb.pruneDatabase(ieM)
+
+        for i in range(prop.nX):
+            ieM = ieM[i][:,mask]
+
+    wDS = wDS[:whl+1]
+
+    if rPCA:
+        nv = nv[:whl]
+        L = L[:whl]
+
+        sol.sep = sex.copy()
+        sol.L = L.copy()
+        sol.nv = nv.copy()
+
+        for i in range(prop.nX):
+            _, sex[i] = sts[i].project(ieM[i] @ mdb.fluxes, prop.fp[i], prop.fc[i])
+            _, _, ieM[i], _ = mdb.project(eex[i], sex[i])
+
+    sol.alg_clock = (time.time() - tic)
+
+    if sys.verbose:
+        if whl == mxI:
+            print("Maximum amount of iterations reached. The problem did not converge to the expected tolerance.")
+        else:
+            print("Convergence achieved in", whl, "iterations.\n")
+
+    sol.es = mdb.forces.copy()
+    sol.ss = mdb.fluxes.copy()
+    sol.se = sex.copy()
+
+    sol.ieM = ieM.copy()
+    sol.wDS = wDS.copy()
+    sol.iter = whl
 
     return sol
