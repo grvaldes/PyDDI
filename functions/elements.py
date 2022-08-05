@@ -28,8 +28,8 @@ def FeMatricesBarTruss(X,EDGES,S):
     vals = np.hstack(-tmp,tmp)
     vals = vals.reshape(-1, order='F')
 
-    B = sparse.csr_matrix((vals,(idx_i,idx_j)),shape = (Nelements,Nnodes*dim))
-    W = sparse.diags(S*L,0,shape = (Nelements,Nelements))
+    B = sparse.csr_matrix((vals, (idx_i, idx_j)), shape = (Nelements, Nnodes*dim))
+    W = sparse.diags(S*L, 0, shape = (Nelements, Nelements))
     
     return W, B, T
 

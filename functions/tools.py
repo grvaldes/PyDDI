@@ -145,7 +145,7 @@ def generatePoints2DPS():
 # @Output 
 def normC(eps,sig,C,byElem = True):
     if C is tuple:
-        C = C(1)
+        C = C[1]
 
     v = np.array(sig.shape[0])
 
@@ -179,32 +179,32 @@ def normC(eps,sig,C,byElem = True):
 # @Output 
 def parseConstitutive(data,typ):
     if typ == '2DTruss' or typ == '3DTruss':
-        if 'linear' == data(0):
-            C = lambda x : data(1) * x
-            dC = lambda x : data(1) + 0 * x
+        if 'linear' == data[0]:
+            C = lambda x : data[1] * x
+            dC = lambda x : data[1] + 0 * x
 
-        elif 'bilinear' == data(0): #TODO
-            C = lambda x : np.multiply((data(1)(1)) * x,(np.abs(x) <= data(1)(3))) + np.multiply((np.sign(x) * data(1)(1) * data(1)(3) + data(1)(2) * (x - np.sign(x) * data(1)(3))),(np.abs(x) > data(1)(3)))
-            dC = lambda x : (data(1)(1)) * (np.abs(x) <= data(1)(3)) + (data(1)(2)) * (np.abs(x) > data(1)(3))
+        elif 'bilinear' == data[0]: #TODO
+            C = lambda x : np.multiply((data[1][1]) * x,(np.abs(x) <= data[1][3])) + np.multiply((np.sign(x) * data[1][1] * data[1][3] + data[1][2] * (x - np.sign(x) * data[1][3])),(np.abs(x) > data[1][3]))
+            dC = lambda x : (data[1][1]) * (np.abs(x) <= data[1][3]) + (data[1][2]) * (np.abs(x) > data[1][3])
 
-        elif 'cubic' == data(0):
-            C = lambda x : data(1)[0] * x ** 3 + data(1)[1] * x ** 2 + data(1)[2] * x
-            dC = lambda x : data(1)[0] * 3 * x ** 2 + data(1)[1] * 2 * x + data(1)[2]
+        elif 'cubic' == data[0]:
+            C = lambda x : data[1][0] * x ** 3 + data[1][1] * x ** 2 + data[1][2] * x
+            dC = lambda x : data[1][0] * 3 * x ** 2 + data[1][1] * 2 * x + data[1][2]
 
     elif typ == 'PlaneStress':
-        if 'linear' == data(0):
-            E = data(1)(1)
-            nu = data(1)(2)
-            I0 = np.eye(3)
+        if 'linear' == data[0]:
+            E = data[1][1]
+            nu = data[1][2]
+            I0 = np.eye[3]
             m = np.array([[1,1,0]]).T
 
             C = lambda x,y,z : np.transpose((E / (1 - nu ** 2) * ((1 - nu) * I0 + nu * (m @ m.T)) @ np.array([[x,y,z]]).T))
             dC = lambda x,y,z : E / (1 - nu ** 2) * ((1 - nu) * I0 + nu * (m @ m.T))
         
-        elif 'cubic' == data(0): #TODO
-            G = data(1)[0]
-            a = data(1)[1]
-            I0 = np.eye(3)
+        elif 'cubic' == data[0]: #TODO
+            G = data[1][0]
+            a = data[1][1]
+            I0 = np.eye[3]
             m = np.array([[1,1,0]]).T
 
             #             C  = @(x,y,z) ((G*I0 - (m*m'))*[x y z]' + G*a*I0*[x.^3+z.^2.*(2*x+y) y.^3+z.^2.*(2*y+x) z.^3+z.*(x+x.*y+y)]' - a*(m*m'*[x y z]').^3)';
