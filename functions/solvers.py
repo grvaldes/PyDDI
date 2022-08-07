@@ -7,40 +7,41 @@ from classes import DataObject, MaterialDatabase, FemStressProjector, DDIObject
 
 def solveSystemLinearElasticFEM(sys, prop):
 
-    fp = np.full(sys.nDof, 0)
-    up = np.full(sys.nDof, 0)
-    rp = np.full(sys.nDof, False)
+    sol = [DataObject(sys,prop) for _ in range(prop.nX)]
 
-    for p in range(prop.F.shape[0]):
-        fp[prop.F[p,0]::sys.Nnod] = prop.F[p,1:2+sys.nDim]
-    for p in range(prop.rx.shape[0]):
-        rp[prop.rx[p,0]::sys.Nnod] = prop.rx[p,1:2+sys.nDim]
-    for p in range(prop.uf.shape[0]):
-        up[prop.uf[p,0]::sys.Nnod] = prop.uf[p,1:2+sys.nDim]
+    for i in range(prop.nX):
+        fp = np.full(sys.nDof, 0)
+        up = np.full(sys.nDof, 0)
+        rp = np.full(sys.nDof, False)
 
-    ud = np.nonzero(up)
+        for p in range(prop.F.shape[0]):
+            fp[prop.F[i][p,0]::sys.Nnod] = prop.F[i][p,1:2+sys.nDim]
+        for p in range(prop.rx.shape[0]):
+            rp[prop.rx[i][p,0]::sys.Nnod] = prop.rx[i][p,1:2+sys.nDim]
+        for p in range(prop.uf.shape[0]):
+            up[prop.uf[i][p,0]::sys.Nnod] = prop.uf[i][p,1:2+sys.nDim]
 
-    D = np.kron(prop.E, sparse.spdiags())
+        ud = np.nonzero(up)
 
-    sol = DataObject(sys, prop)
+        D = np.kron(prop.E, sparse.spdiags())
 
-    sol.K = sys.BW @ D @ sys.B
-    sol.f = fp - sol.K @ up
-    sol.r = rp.copy()
-    sol.u = up.copy()
+        sol[i].K = sys.BW @ D @ sys.B
+        sol[i].f = fp - sol[i].K @ up
+        sol[i].r = rp.copy()
+        sol[i].u = up.copy()
 
-    sol.fp = fp.copy()
-    sol.rp = rp.copy()
-    sol.up = up.copy()
+        sol[i].fp = fp.copy()
+        sol[i].rp = rp.copy()
+        sol[i].up = up.copy()
 
-    Kr = sol.K[~rp and ~ud,~rp and ~ud]
-    fr = sol.f[~rp and ~ud]
+        Kr = sol[i].K[~rp and ~ud,~rp and ~ud]
+        fr = sol[i].f[~rp and ~ud]
 
-    sol.u[~rp and ~ud] = np.linalg.solve(Kr, fr)
-    sol.r[rp] = sol.K[rp,:] @ sol.u
+        sol[i].u[~rp and ~ud] = np.linalg.solve(Kr, fr)
+        sol[i].r[rp] = sol[i].K[rp,:] @ sol[i].u
 
-    sol.eps = (sys.B @ sol.u).reshape((sys.ntIP,-1))
-    sol.sig = (D @ sol.eps).reshape((sys.ntIP,-1))
+        sol[i].eps = (sys.B @ sol[i].u).reshape((sys.ntIP,-1))
+        sol[i].sig = (D @ sol[i].eps).reshape((sys.ntIP,-1))
 
     return sol
     

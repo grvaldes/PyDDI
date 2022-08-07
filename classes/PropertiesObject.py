@@ -10,10 +10,10 @@ class PropertiesObject:
         self.C0 = None
         self.Er = Er
 
-        self.F = None
-        self.Fr = None
-        self.rx = None
-        self.uf = None
+        self.F = []
+        self.Fr = []
+        self.rx = []
+        self.uf = []
         self.fp = []
         self.up = []
         self.rp = []
@@ -49,7 +49,7 @@ class PropertiesObject:
             else:
                 self.ee, self.se = generatePoints(sys, curvType, curvC, curvPts)
 
-        elif problemType == "LinearFEM":
+        elif problemType == "Linear":
             self.vE = np.ones(sys.nEl)
 
             if testVal == None:
@@ -82,7 +82,7 @@ class PropertiesObject:
                     self.vE[sys.grp[i]] = Er[i]
 
 
-        elif problemType == "ViscoElasticFEM":
+        elif problemType == "LinearViscoelastic" or problemType == "LinearViscoelastic2":
             self.vE = np.ones(sys.nEl)
             self.dt = dt
             self.E0 = CData[0]
@@ -113,7 +113,7 @@ class PropertiesObject:
                     self.vE[sys.grp[i]] = Er[i]
 
 
-        elif problemType == "NonLinearFEM":
+        elif problemType == "Nonlinear":
             self.vE = np.ones(sys.nEl)
 
             if testVal == None:
