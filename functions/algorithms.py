@@ -41,81 +41,129 @@ def generateData(sys, problemType, *, E = 1, Er = 1, CData = None, dt = None, fo
 
         if 'X' in testVal or 'Xt' in testVal:
             if forceType == "nodal":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                SG.append()
-                EP.append('X')
-            elif forceType == "displacement":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                Fr.append(np.array([]))
-                SG.append()
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                SG.append(forceVal * (sys.BND_e[sys.BND_e != 0].size - 1) / LNG_Y)
                 EP.append('X')
 
+                F[-1][BND_east,0] = 1
+                F[-1][BND_ne and BND_se,0] = 0.5
+                rx[-1][sys.BND_w,:] = 1
+            elif forceType == "displacement":
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((sys.BND_e,np.full(sys.nNod, False)))])
+                SG.append(forceVal)
+                EP.append('X')
+
+                rx[-1][sys.BND_w and sys.BND_e,:] = 1
+                uf[-1][sys.BND_e,0] = forceVal * LNG_X
         if 'XX' in testVal or 'Xc' in testVal:
             if forceType == "nodal":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                SG.append()
-                EP.append('X')
-            elif forceType == "displacement":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                Fr.append(np.array([]))
-                SG.append()
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                SG.append(forceVal * (sys.BND_e[sys.BND_e != 0].size - 1) / LNG_Y)
                 EP.append('X')
 
+                F[-1][BND_east,0] = -1
+                F[-1][BND_ne and BND_se,0] = -0.5
+                rx[-1][BND_west,0] = 1
+                rx[-1][BND_nw,0] = 1
+                rx[-1][BND_sw,:] = 1
+            elif forceType == "displacement":
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((sys.BND_e,np.full(sys.nNod, False)))])
+                SG.append(forceVal)
+                EP.append('X')
+
+                rx[-1][sys.BND_w and sys.BND_e,:] = 1
+                uf[-1][sys.BND_e,0] = -forceVal * LNG_X
         if 'Y' in testVal or 'Yt' in testVal:
             if forceType == "nodal":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                SG.append()
-                EP.append('Y')
-            elif forceType == "displacement":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                Fr.append(np.array([]))
-                SG.append()
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                SG.append(forceVal * (sys.BND_n[sys.BND_n != 0].size - 1) / LNG_X)
                 EP.append('Y')
 
+                F[-1][BND_north,1] = 1
+                F[-1][BND_ne and BND_nw,1] = 0.5
+                rx[-1][sys.BND_s,:] = 1
+            elif forceType == "displacement":
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_n))])
+                SG.append(forceVal)
+                EP.append('Y')
+
+                rx[-1][sys.BND_s and sys.BND_n,:] = 1
+                uf[-1][sys.BND_n,1] = forceVal * LNG_Y
         if 'YY' in testVal or 'Yc' in testVal:
             if forceType == "nodal":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                SG.append()
-                EP.append('Y')
-            elif forceType == "displacement":
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                Fr.append(np.array([]))
-                SG.append()
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                SG.append(forceVal * (sys.BND_n[sys.BND_n != 0].size - 1) / LNG_X)
                 EP.append('Y')
 
+                F[-1][BND_north,1] = -1
+                F[-1][BND_ne and BND_nw,0] = -0.5
+                rx[-1][BND_south,1] = 1
+                rx[-1][BND_se,:] = 1
+                rx[-1][BND_sw,1] = 1
+            elif forceType == "displacement":
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_n))])
+                SG.append(forceVal)
+                EP.append('Y')
+
+                rx[-1][sys.BND_s and sys.BND_n,:] = 1
+                uf[-1][sys.BND_n,1] = -forceVal * LNG_X
         if 'SS' in testVal or 'Sh' in testVal:
             if forceType == "nodal":
-                F.append(np.array([]))
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                uf.append(np.array([]))
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+
+                F[-1][BND_east,1] = -0.25
+                F[-1][BND_ne and BND_se,1] = -0.125
+                rx[-1][sys.BND_w,:] = 1
+                rx[-1][sys.BND_e,0] = 1
+
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+
+                F[-1][BND_east,1] = 0.25
+                F[-1][BND_ne and BND_se,1] = 0.125
+                rx[-1][sys.BND_w,:] = 1
+                rx[-1][sys.BND_e,0] = 1
             elif forceType == "displacement":
-                F.append(np.array([]))
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                uf.append(np.array([]))
-                Fr.append(np.array([]))
-                Fr.append(np.array([]))
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_e))])
+
+                rx[-1][sys.BND_w,:] = 1
+                rx[-1][sys.BND_e,:] = 1
+                uf[-1][sys.BND_e,1] = -0.5 * forceVal * LNG_Y
+
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_e))])
+
+                rx[-1][sys.BND_w,:] = 1
+                rx[-1][sys.BND_e,:] = 1
+                uf[-1][sys.BND_n,0] = 0.5 * forceVal * LNG_Y
                 
             SG.append(0)
             SG.append(0)
@@ -124,21 +172,41 @@ def generateData(sys, problemType, *, E = 1, Er = 1, CData = None, dt = None, fo
 
         if 'SS' in testVal or 'Sv' in testVal:
             if forceType == "nodal":
-                F.append(np.array([]))
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                uf.append(np.array([]))
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                
+                F[-1][BND_north,0] = -0.25
+                F[-1][BND_ne and BND_nw,0] = -0.125
+                rx[-1][sys.BND_s,:] = 1
+                rx[-1][sys.BND_n,1] = 1
+                
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+
+                F[-1][BND_north,0] = 0.25
+                F[-1][BND_ne and BND_nw,0] = 0.125
+                rx[-1][sys.BND_s,:] = 1
+                rx[-1][sys.BND_n,1] = 1
             elif forceType == "displacement":
-                F.append(np.array([]))
-                F.append(np.array([]))
-                rx.append(np.array([]))
-                rx.append(np.array([]))
-                uf.append(np.array([]))
-                uf.append(np.array([]))
-                Fr.append(np.array([]))
-                Fr.append(np.array([]))
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((sys.BND_n,np.full(sys.nNod, False)))])
+                
+                rx[-1][sys.BND_s,:] = 1
+                rx[-1][sys.BND_n,:] = 1
+                uf[-1][sys.BND_n,0] = -0.5 * forceVal * LNG_X
+                
+                F.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                rx.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                uf.append(np.zeros((sys.nDim * sys.nNod, sys.nDim)))
+                Fr.append([np.hstack((sys.BND_n,np.full(sys.nNod, False)))])
+
+                rx[-1][sys.BND_s,:] = 1
+                rx[-1][sys.BND_n,:] = 1
+                uf[-1][sys.BND_n,0] = 0.5 * forceVal * LNG_X
                 
             SG.append(0)
             SG.append(0)
@@ -159,38 +227,38 @@ def generateData(sys, problemType, *, E = 1, Er = 1, CData = None, dt = None, fo
         tY = np.zeros(len(F))
 
         for i in range(len(F)-1,-1,-1):
-            F[i][:,1:] *= forceVal
+            F[i] *= forceVal
 
             for j in range(prop.steps):
-                prop.F[prop.steps * i + j][:,1:] = F[i][:,1:] * (j + 1) / prop.steps
-                prop.uf[prop.steps * i + j][:,1:] = uf[i][:,1:] * (j + 1) / prop.steps
-                prop.rx[prop.steps * i + j][:,1:] = rx[i]
+                prop.F[prop.steps * i + j] = F[i] * (j + 1) / prop.steps
+                prop.uf[prop.steps * i + j] = uf[i] * (j + 1) / prop.steps
+                prop.rx[prop.steps * i + j] = rx[i]
 
                 if forceType == "displacement":
-                    prop.Fr[prop.steps * i + j][:,1:] = Fr[i]
+                    prop.Fr[prop.steps * i + j] = Fr[i]
 
         femData = solveSystemLinearElasticFEM(sys, prop)
 
         for i in range(len(F)):
             if forceType == "nodal":
                 if EP[i] == "X":
-                    EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[sys.BND_e]) / LNG_X
+                    EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[np.hstack((sys.BND_e,np.full(sys.nNod, False)))]) / LNG_X
                     nX += 1
                     tX[i] = i
                     C0[i] = np.abs(SG[i] / EP[i])
                 elif EP[i] == "Y":
-                    EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[sys.nNod + sys.BND_n]) / LNG_Y
+                    EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[np.hstack((np.full(sys.nNod, False), sys.BND_n))]) / LNG_Y
                     nY += 1
                     tY[i] = i
                     C0[i] = np.abs(SG[i] / EP[i])
             elif forceType == "displacement":
                 if EP[i] == "X":
-                    EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[sys.BND_e]) / LNG_Y
+                    EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[np.hstack((sys.BND_e,np.full(sys.nNod, False)))]) / LNG_Y
                     nX += 1
                     tX[i] = i
                     C0[i] = np.abs(EP[i] / SG[i])
                 elif EP[i] == "Y":
-                    EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[sys.nNod + sys.BND_n]) / LNG_X
+                    EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[np.hstack((np.full(sys.nNod, False), sys.BND_n))]) / LNG_X
                     nY += 1
                     tY[i] = i
                     C0[i] = np.abs(EP[i] / SG[i])
