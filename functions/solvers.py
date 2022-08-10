@@ -10,20 +10,13 @@ def solveSystemLinearElasticFEM(sys, prop):
     sol = [DataObject(sys,prop) for _ in range(prop.nX)]
 
     for i in range(prop.nX):
-        fp = np.full(sys.nDof, 0)
-        up = np.full(sys.nDof, 0)
-        rp = np.full(sys.nDof, False)
-
-        for p in range(prop.F.shape[0]):
-            fp[prop.F[i][p,0]::sys.Nnod] = prop.F[i][p,1:2+sys.nDim]
-        for p in range(prop.rx.shape[0]):
-            rp[prop.rx[i][p,0]::sys.Nnod] = prop.rx[i][p,1:2+sys.nDim]
-        for p in range(prop.uf.shape[0]):
-            up[prop.uf[i][p,0]::sys.Nnod] = prop.uf[i][p,1:2+sys.nDim]
+        fp = prop.F[i].ravel(order = 'F')
+        up = prop.uf[i].ravel(order = 'F')
+        rp = prop.rx[i].ravel(order = 'F')
 
         ud = np.nonzero(up)
 
-        D = np.kron(prop.E, sparse.spdiags())
+        D = np.kron(prop.E, sparse.spdiags(np.repeat(prop.vE,sys.nIP), 0, sys.W.shape, sys.W.shape))
 
         sol[i].K = sys.BW @ D @ sys.B
         sol[i].f = fp - sol[i].K @ up
@@ -56,7 +49,7 @@ def solveSystemLinearViscoelasticFEM(sys, prop, sols = [], gam = 1, ths = 1e-8):
     Di = []
     Ki = []
 
-    D0 = np.kron(prop.E0,sparse.spdiags())
+    D0 = np.kron(prop.E0, sparse.spdiags(np.repeat(prop.vE,sys.nIP), 0, sys.W.shape, sys.W.shape)) 
     K0 = sys.BW @ D0 @ sys.B
     KT = K0.copy()
 
@@ -64,7 +57,7 @@ def solveSystemLinearViscoelasticFEM(sys, prop, sols = [], gam = 1, ths = 1e-8):
         mu.append(1 / (1 + gam * dt / ldi[i]))
         alf.append(1 - (1 - gam) * dt / ldi[i])
 
-        Di.append(np.kron(prop.Ei[i],sparse.spdiags()))
+        Di.append(np.kron(prop.Ei[i], sparse.spdiags(np.repeat(prop.vE,sys.nIP), 0, sys.W.shape, sys.W.shape)))
         Ki.append(sys.BW @ Di[i] @ sys.B)
 
         KT += mu[i] * Ki[i]
@@ -94,12 +87,9 @@ def solveSystemLinearViscoelasticFEM(sys, prop, sols = [], gam = 1, ths = 1e-8):
     for n in range(prop.nX):
         sol.append(DataObject(sys, prop))
 
-        for p in range(prop.F[n].shape[0]):
-            fn1[prop.F[n][p,0]::sys.Nnod] = prop.F[n][p,1:2+sys.nDim]
-        for p in range(prop.rx[n].shape[0]):
-            rn1[prop.rx[n][p,0]::sys.Nnod] = prop.rx[n][p,1:2+sys.nDim]
-        for p in range(prop.uf[n].shape[0]):
-            pn1[prop.uf[n][p,0]::sys.Nnod] = prop.uf[n][p,1:2+sys.nDim]
+        fn1 = prop.F[n].ravel(order = 'F')
+        pn1 = prop.uf[n].ravel(order = 'F')
+        rn1 = prop.rx[n].ravel(order = 'F')
 
         pd1 = np.nonzero(pn1)
 
