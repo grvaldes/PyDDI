@@ -1,4 +1,6 @@
 import numpy as np
+import scipy.spatial
+from scipy import sparse
 
 # @func CPlaneStress: computes the D tensor for the elastic plane stress case.    
 # @Input E: Young's modulus
@@ -9,31 +11,55 @@ def CPlaneStress(E,nu = 0.3):
     B = A * nu
     C = E / (2 * (1 + nu))
 
-    return np.array([[A,B,0],[B,A,0],[0,0,2*C]])
+    return np.array([[A, B, 0], [B, A, 0], [0, 0, 2*C]])
 
 
 # @func 
 # @Input 
 # @Input 
 # @Output 
-def simpleKmeans(X,k,maxiter = 100,rand = True,ie = None):
+def simpleKmeans(X, k, maxiter = 100, rand = True, ie = None):
     n = X.shape[0]
-    ind = np.zeros(k)
 
     if rand:
-        C, ind = datasample(X,1,1) #TODO
+        rng = np.random.default_rng()
+        C[0,:] = rng.choice(X, 1, axis = 0)
         minDist = np.inf * np.ones(n)
 
+        for ii in range(1,k):
+            minDist = np.fmin(minDist,np.sqrt(np.sum((X - C[ii - 1,:]) ** 2, axis = 1)))
+            denominator = np.sum(minDist)
+
+            if denominator == 0 or denominator == np.inf or denominator == np.nan:
+                C[ii:k,:] = rng.choice(X, k - ii + 1, axis = 0, replace = 'False')
+                break
+
+            sampleProbability =  minDist / denominator
+            C[ii,:] = rng.choice(X, 1, axis = 0)
+
+        KDTS = scipy.spatial.KDTree(C)
+        ie = KDTS.query(X)
+
     for i in range(maxiter):
-        A = 0
+        A = sparse.csr_matrix((np.ones(n), (ie, np.arange(n))), shape = (k, n))
         C = A @ X
-        ns = accumarray()
+        ns = np.bincount(ie, weights = np.ones(ie.shape))
         C = C / ns
-        KDTS = KDTreeSearcher(C)
-        ie_n = knnsearch()
+        KDTS = scipy.spatial.KDTree(C)
+        ie_n = KDTS.query(X)
 
         if ie == ie_n:
             break
+
+        ie = ie_n.copy()
+
+    def myDataSample(X, prob):
+        cumProb = np.cumsum(prob)
+        a = np.random.rand(1)
+        pos = np.where(a < cumProb)[0][0]
+        x = x[pos,:]
+
+        return x, pos
 
     return ie, C
 
@@ -59,23 +85,10 @@ def nestedKmeans(X,kn,maxiter = 100,rand = True,ie = None):
             C_n = np.vstack(C_n,t_C)
 
         kn = kn[1:]
-        ie = ie_n
-        C = C_n
+        ie = ie_n.copy()
+        C = C_n.copy()
 
     return ie, C
-    
-    
-# @func 
-# @Input 
-# @Input 
-# @Output 
-def myDataSample(X,prob): 
-    cumProb = cumsum(prob)
-    a = np.random.rand(1)
-    pos = find(a < cumProb,1,'first')
-    x = X[pos,:]
-
-    return x, pos
 
 
 # @func 
