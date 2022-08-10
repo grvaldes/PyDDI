@@ -2,7 +2,7 @@ import math
 import numpy as np
 import numpy.matlib as matlib
 from functions.solvers import solveSystemLinearElasticFEM, solveSystemLinearViscoelasticFEM
-from functions.tools import *
+from functions.tools import simpleKmeans, CPlaneStress
 from classes import CAObject, PropertiesObject, DDIObject
 
 

@@ -35,7 +35,7 @@ def simpleKmeans(X, k, maxiter = 100, rand = True, ie = None):
                 break
 
             sampleProbability =  minDist / denominator
-            C[ii,:] = rng.choice(X, 1, axis = 0)
+            C[ii,:], _ = myDataSample(X, sampleProbability)
 
         KDTS = scipy.spatial.KDTree(C)
         ie = KDTS.query(X)

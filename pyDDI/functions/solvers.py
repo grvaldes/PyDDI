@@ -2,7 +2,7 @@ import time
 import numpy as np
 import scipy.linalg
 from scipy import sparse
-from classes import DataObject, MaterialDatabase, FemStressProjector, DDIObject
+from classes import DataObject, MaterialDatabase, FemStressProjector
 
 
 def solveSystemLinearElasticFEM(sys, prop):
