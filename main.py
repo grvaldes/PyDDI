@@ -1,6 +1,7 @@
 import numpy as np
 from pyDDI.functions import *
 from pyDDI.classes.SystemObject import SystemObject
+from pyDDI.functions.algorithms import generateDataLinearElastic
 
 mshT3 = {
     'POS' : np.array([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]]),
@@ -57,5 +58,7 @@ mshQ9 = {
     'NEIGH' : 0,
 }
 
-sys = SystemObject('PlaneStress', 'Bar', 'LinearElastic', mshQ4, nGaussPoints = 1, verbose = True)
+sys = SystemObject('PlaneStress', 'Quad', 'Linear', mshQ4, nGaussPoints = 1, verbose = True)
 print("\n\n")
+
+femData, prop = generateDataLinearElastic(sys, 'Linear')

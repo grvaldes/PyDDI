@@ -2,7 +2,9 @@ import time
 import numpy as np
 import scipy.linalg
 from scipy import sparse
-from classes import DataObject, MaterialDatabase, FemStressProjector
+from pyDDI.classes.DataObject import DataObject
+from pyDDI.classes.MaterialDatabase import MaterialDatabase
+from pyDDI.classes.FemStressProjector import FemStressProjector
 
 
 def solveSystemLinearElasticFEM(sys, prop):
@@ -14,9 +16,9 @@ def solveSystemLinearElasticFEM(sys, prop):
         up = prop.uf[i].ravel(order = 'F')
         rp = prop.rx[i].ravel(order = 'F')
 
-        ud = np.nonzero(up)
+        ud = up.astype('bool')
 
-        D = np.kron(prop.E, sparse.spdiags(np.repeat(prop.vE,sys.nIP), 0, sys.W.shape, sys.W.shape))
+        D = sparse.kron(prop.E, sparse.diags(np.repeat(prop.vE,sys.nIP), 0, shape = sys.W.shape))
 
         sol[i].K = sys.BW @ D @ sys.B
         sol[i].f = fp - sol[i].K @ up
@@ -27,14 +29,14 @@ def solveSystemLinearElasticFEM(sys, prop):
         sol[i].rp = rp.copy()
         sol[i].up = up.copy()
 
-        Kr = sol[i].K[~rp and ~ud,~rp and ~ud]
-        fr = sol[i].f[~rp and ~ud]
+        Kr = sol[i].K[np.ix_(np.logical_and(~rp, ~ud), np.logical_and(~rp, ~ud))]
+        fr = sol[i].f[np.logical_and(~rp, ~ud)]
 
-        sol[i].u[~rp and ~ud] = np.linalg.solve(Kr, fr)
+        sol[i].u[np.logical_and(~rp, ~ud)] = sparse.linalg.spsolve(Kr, fr)
         sol[i].r[rp] = sol[i].K[rp,:] @ sol[i].u
 
-        sol[i].eps = (sys.B @ sol[i].u).reshape((sys.ntIP,-1))
-        sol[i].sig = (D @ sol[i].eps).reshape((sys.ntIP,-1))
+        sol[i].eps = (sys.B @ sol[i].u).reshape((sys.ntIP, -1))
+        sol[i].sig = (D @ sol[i].eps.ravel('F')).reshape((sys.ntIP,-1))
 
     return sol
     

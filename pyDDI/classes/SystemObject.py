@@ -64,17 +64,17 @@ class SystemObject:
         else:
             raise Exception("Element type not defined.")
 
-        self.BND_s = np.nonzero(self.X[:,1] == np.min(self.X[:,1]))
-        self.BND_n = np.nonzero(self.X[:,1] == np.max(self.X[:,1]))
-        self.BND_e = np.nonzero(self.X[:,0] == np.min(self.X[:,0]))
-        self.BND_w = np.nonzero(self.X[:,0] == np.max(self.X[:,0]))
+        self.BND_s = np.nonzero(self.X[:,1] == np.min(self.X[:,1]))[0]
+        self.BND_n = np.nonzero(self.X[:,1] == np.max(self.X[:,1]))[0]
+        self.BND_e = np.nonzero(self.X[:,0] == np.min(self.X[:,0]))[0]
+        self.BND_w = np.nonzero(self.X[:,0] == np.max(self.X[:,0]))[0]
         
         self.nEl = self.T.shape[0]
         self.nNodEl = self.T.shape[1]
         self.nNod = self.X.shape[0]
 
         self.nDof = self.nNod * self.nDim
-        self.nIP = self.W.shape[0] / self.nEl
+        self.nIP = int(self.W.shape[0] / self.nEl)
         self.ntIP = self.nEl * self.nIP
 
         if np.max(self.grp) == 0:

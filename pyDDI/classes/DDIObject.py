@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from functions.tools import nestedKmeans
+from pyDDI.functions.tools import nestedKmeans
 
 class DDIObject:
 

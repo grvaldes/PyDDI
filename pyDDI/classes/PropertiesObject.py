@@ -1,5 +1,5 @@
 import numpy as np
-from functions.tools import CPlaneStress, generatePoints, parseConstitutive
+from pyDDI.functions.tools import CPlaneStress, generatePoints, parseConstitutive
 
 class PropertiesObject:
 

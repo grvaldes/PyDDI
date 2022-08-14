@@ -3,7 +3,7 @@ import scipy.linalg
 import scipy.spatial
 from scipy import sparse
 
-class MaterialDatabaseGeneralized:
+class MaterialDatabase:
 
     def __init__(self, forces, fluxes, C = None, iC = None):
         assert forces.shape == fluxes.shape, "Force-Fluxes size mismatch"

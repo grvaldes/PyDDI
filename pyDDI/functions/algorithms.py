@@ -1,29 +1,29 @@
 import math
 import numpy as np
-import numpy.matlib as matlib
-from functions.solvers import solveSystemLinearElasticFEM, solveSystemLinearViscoelasticFEM
-from functions.tools import simpleKmeans, CPlaneStress
-from classes import CAObject, PropertiesObject, DDIObject
+from pyDDI.functions.tools import simpleKmeans, CPlaneStress
+from pyDDI.functions.solvers import solveSystemLinearElasticFEM, solveSystemLinearViscoelasticFEM
+from pyDDI.classes.CAObject import CAObject
+from pyDDI.classes.DDIObject import DDIObject
+from pyDDI.classes.PropertiesObject import PropertiesObject
 
 
-def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = None, C0 = 1, steps = None, forceVal = None, testVal = 'XXYYSS'):
+def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = 'displacement', C0 = None, steps = 50, forceVal = 0.1, testVal = 'XXYYSS'):
 
     if sys.verbose:
         print("Generating the mechanical database through FEM.\n")
 
-
     LNG_X = np.max(sys.X[:,0]) - np.min(sys.X[:,0])
     LNG_Y = np.max(sys.X[:,1]) - np.min(sys.X[:,1])
 
-    BND_south = np.nonzero(sys.X[:,1] == np.min(sys.X[:,1]) and sys.X[:,0] != np.min(sys.X[:,0]) and sys.X[:,0] != np.max(sys.X[:,0]))
-    BND_north = np.nonzero(sys.X[:,1] == np.max(sys.X[:,1]) and sys.X[:,0] != np.min(sys.X[:,0]) and sys.X[:,0] != np.max(sys.X[:,0]))
-    BND_east = np.nonzero(sys.X[:,0] == np.max(sys.X[:,0]) and sys.X[:,1] != np.min(sys.X[:,1]) and sys.X[:,1] != np.max(sys.X[:,1]))
-    BND_west = np.nonzero(sys.X[:,0] == np.min(sys.X[:,0]) and sys.X[:,1] != np.min(sys.X[:,1]) and sys.X[:,1] != np.max(sys.X[:,1]))
+    BND_south = np.nonzero(np.logical_and(np.logical_and(sys.X[:,1] == np.min(sys.X[:,1]), sys.X[:,0] != np.min(sys.X[:,0])), sys.X[:,0] != np.max(sys.X[:,0])))[0]
+    BND_north = np.nonzero(np.logical_and(np.logical_and(sys.X[:,1] == np.max(sys.X[:,1]), sys.X[:,0] != np.min(sys.X[:,0])), sys.X[:,0] != np.max(sys.X[:,0])))[0]
+    BND_east = np.nonzero(np.logical_and(np.logical_and(sys.X[:,0] == np.max(sys.X[:,0]), sys.X[:,1] != np.min(sys.X[:,1])), sys.X[:,1] != np.max(sys.X[:,1])))[0]
+    BND_west = np.nonzero(np.logical_and(np.logical_and(sys.X[:,0] == np.min(sys.X[:,0]), sys.X[:,1] != np.min(sys.X[:,1])), sys.X[:,1] != np.max(sys.X[:,1])))[0]
 
-    BND_ne = np.nonzero(sys.X[:,0] == np.max(sys.X[:,0]) and sys.X[:,1] == np.max(sys.X[:,1]))
-    BND_nw = np.nonzero(sys.X[:,0] == np.min(sys.X[:,0]) and sys.X[:,1] == np.max(sys.X[:,1]))
-    BND_se = np.nonzero(sys.X[:,0] == np.max(sys.X[:,0]) and sys.X[:,1] == np.min(sys.X[:,1]))
-    BND_sw = np.nonzero(sys.X[:,0] == np.min(sys.X[:,0]) and sys.X[:,1] == np.min(sys.X[:,1]))
+    BND_ne = np.nonzero(np.logical_and(sys.X[:,0] == np.max(sys.X[:,0]), sys.X[:,1] == np.max(sys.X[:,1])))[0]
+    BND_nw = np.nonzero(np.logical_and(sys.X[:,0] == np.min(sys.X[:,0]), sys.X[:,1] == np.max(sys.X[:,1])))[0]
+    BND_se = np.nonzero(np.logical_and(sys.X[:,0] == np.max(sys.X[:,0]), sys.X[:,1] == np.min(sys.X[:,1])))[0]
+    BND_sw = np.nonzero(np.logical_and(sys.X[:,0] == np.min(sys.X[:,0]), sys.X[:,1] == np.min(sys.X[:,1])))[0]
 
     F = []
     Fr = []
@@ -40,7 +40,7 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            SG.append(forceVal * (sys.BND_e[sys.BND_e != 0].size - 1) / LNG_Y)
+            SG.append(forceVal * (sys.BND_e.size - 1) / LNG_Y)
             EP.append('X')
 
             F[-1][BND_east,0] = 1
@@ -50,22 +50,22 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((sys.BND_e,np.full(sys.nNod, False)))])
+            Fr.append([sys.BND_e])
             SG.append(forceVal)
             EP.append('X')
 
-            rx[-1][sys.BND_w and sys.BND_e,:] = 1
+            rx[-1][np.hstack((sys.BND_w, sys.BND_e)),:] = 1
             uf[-1][sys.BND_e,0] = forceVal * LNG_X
     if 'XX' in testVal or 'Xc' in testVal:
         if forceType == "nodal":
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            SG.append(forceVal * (sys.BND_e[sys.BND_e != 0].size - 1) / LNG_Y)
+            SG.append(forceVal * (sys.BND_e.size - 1) / LNG_Y)
             EP.append('X')
 
             F[-1][BND_east,0] = -1
-            F[-1][BND_ne and BND_se,0] = -0.5
+            F[-1][np.hstack((BND_ne, BND_se)),0] = -0.5
             rx[-1][BND_west,0] = 1
             rx[-1][BND_nw,0] = 1
             rx[-1][BND_sw,:] = 1
@@ -73,43 +73,43 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((sys.BND_e,np.full(sys.nNod, False)))])
+            Fr.append([sys.BND_e])
             SG.append(forceVal)
             EP.append('X')
 
-            rx[-1][sys.BND_w and sys.BND_e,:] = 1
+            rx[-1][np.hstack((sys.BND_w, sys.BND_e)),:] = 1
             uf[-1][sys.BND_e,0] = -forceVal * LNG_X
     if 'Y' in testVal or 'Yt' in testVal:
         if forceType == "nodal":
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            SG.append(forceVal * (sys.BND_n[sys.BND_n != 0].size - 1) / LNG_X)
+            SG.append(forceVal * (sys.BND_n.size - 1) / LNG_X)
             EP.append('Y')
 
             F[-1][BND_north,1] = 1
-            F[-1][BND_ne and BND_nw,1] = 0.5
+            F[-1][np.hstack((BND_ne, BND_nw)),1] = 0.5
             rx[-1][sys.BND_s,:] = 1
         elif forceType == "displacement":
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_n))])
+            Fr.append([sys.BND_n + sys.nNod])
             SG.append(forceVal)
             EP.append('Y')
 
-            rx[-1][sys.BND_s and sys.BND_n,:] = 1
+            rx[-1][np.hstack((sys.BND_s, sys.BND_n)),:] = 1
             uf[-1][sys.BND_n,1] = forceVal * LNG_Y
     if 'YY' in testVal or 'Yc' in testVal:
         if forceType == "nodal":
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            SG.append(forceVal * (sys.BND_n[sys.BND_n != 0].size - 1) / LNG_X)
+            SG.append(forceVal * (sys.BND_n.size - 1) / LNG_X)
             EP.append('Y')
 
             F[-1][BND_north,1] = -1
-            F[-1][BND_ne and BND_nw,0] = -0.5
+            F[-1][np.hstack((BND_ne, BND_nw)),0] = -0.5
             rx[-1][BND_south,1] = 1
             rx[-1][BND_se,:] = 1
             rx[-1][BND_sw,1] = 1
@@ -117,11 +117,11 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_n))])
+            Fr.append([sys.BND_n + sys.nNod])
             SG.append(forceVal)
             EP.append('Y')
 
-            rx[-1][sys.BND_s and sys.BND_n,:] = 1
+            rx[-1][np.hstack((sys.BND_s, sys.BND_n)),:] = 1
             uf[-1][sys.BND_n,1] = -forceVal * LNG_X
     if 'SS' in testVal or 'Sh' in testVal:
         if forceType == "nodal":
@@ -130,7 +130,7 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             uf.append(np.zeros((sys.nNod, sys.nDim)))
 
             F[-1][BND_east,1] = -0.25
-            F[-1][BND_ne and BND_se,1] = -0.125
+            F[-1][np.hstack((BND_ne, BND_se)),1] = -0.125
             rx[-1][sys.BND_w,:] = 1
             rx[-1][sys.BND_e,0] = 1
 
@@ -139,14 +139,14 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             uf.append(np.zeros((sys.nNod, sys.nDim)))
 
             F[-1][BND_east,1] = 0.25
-            F[-1][BND_ne and BND_se,1] = 0.125
+            F[-1][np.hstack((BND_ne, BND_se)),1] = 0.125
             rx[-1][sys.BND_w,:] = 1
             rx[-1][sys.BND_e,0] = 1
         elif forceType == "displacement":
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_e))])
+            Fr.append([sys.BND_e + sys.nNod])
 
             rx[-1][sys.BND_w,:] = 1
             rx[-1][sys.BND_e,:] = 1
@@ -155,7 +155,7 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((np.full(sys.nNod, False), sys.BND_e))])
+            Fr.append([sys.BND_e + sys.nNod])
 
             rx[-1][sys.BND_w,:] = 1
             rx[-1][sys.BND_e,:] = 1
@@ -173,7 +173,7 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             uf.append(np.zeros((sys.nNod, sys.nDim)))
             
             F[-1][BND_north,0] = -0.25
-            F[-1][BND_ne and BND_nw,0] = -0.125
+            F[-1][np.hstack((BND_ne, BND_nw)),0] = -0.125
             rx[-1][sys.BND_s,:] = 1
             rx[-1][sys.BND_n,1] = 1
             
@@ -182,14 +182,14 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             uf.append(np.zeros((sys.nNod, sys.nDim)))
 
             F[-1][BND_north,0] = 0.25
-            F[-1][BND_ne and BND_nw,0] = 0.125
+            F[-1][np.hstack((BND_ne, BND_nw)),0] = 0.125
             rx[-1][sys.BND_s,:] = 1
             rx[-1][sys.BND_n,1] = 1
         elif forceType == "displacement":
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((sys.BND_n,np.full(sys.nNod, False)))])
+            Fr.append([sys.BND_n])
             
             rx[-1][sys.BND_s,:] = 1
             rx[-1][sys.BND_n,:] = 1
@@ -198,7 +198,7 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
             F.append(np.zeros((sys.nNod, sys.nDim)))
             rx.append(np.full((sys.nNod, sys.nDim), False))
             uf.append(np.zeros((sys.nNod, sys.nDim)))
-            Fr.append([np.hstack((sys.BND_n,np.full(sys.nNod, False)))])
+            Fr.append([sys.BND_n])
 
             rx[-1][sys.BND_s,:] = 1
             rx[-1][sys.BND_n,:] = 1
@@ -209,7 +209,7 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
         EP.append(0)
         EP.append(0)
 
-    prop.nX = prop.steps * len(prop.F)
+    prop.nX = prop.steps * len(F)
     prop.F = [None for _ in range(prop.nX)]
     prop.uf = [None for _ in range(prop.nX)]
     prop.rx = [None for _ in range(prop.nX)]
@@ -219,8 +219,8 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
 
     nX = 0
     nY = 0
-    tX = np.zeros(len(F))
-    tY = np.zeros(len(F))
+    tX = np.zeros(len(F), dtype = np.int32)
+    tY = np.zeros(len(F), dtype = np.int32)
 
     for i in range(len(F)-1,-1,-1):
         F[i] *= forceVal
@@ -235,40 +235,44 @@ def generateDataLinearElastic(sys, problemType, *, E = 1, Er = 1, forceType = No
 
     femData = solveSystemLinearElasticFEM(sys, prop)
 
-    for i in range(len(F)):
-        if forceType == "nodal":
-            if EP[i] == "X":
-                EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[np.hstack((sys.BND_e,np.full(sys.nNod, False)))]) / LNG_X
-                nX += 1
-                tX[i] = i
-                C0[i] = np.abs(SG[i] / EP[i])
-            elif EP[i] == "Y":
-                EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[np.hstack((np.full(sys.nNod, False), sys.BND_n))]) / LNG_Y
-                nY += 1
-                tY[i] = i
-                C0[i] = np.abs(SG[i] / EP[i])
-        elif forceType == "displacement":
-            if EP[i] == "X":
-                EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[np.hstack((sys.BND_e,np.full(sys.nNod, False)))]) / LNG_Y
-                nX += 1
-                tX[i] = i
-                C0[i] = np.abs(EP[i] / SG[i])
-            elif EP[i] == "Y":
-                EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[np.hstack((np.full(sys.nNod, False), sys.BND_n))]) / LNG_X
-                nY += 1
-                tY[i] = i
-                C0[i] = np.abs(EP[i] / SG[i])
+    if C0 == None:
+        C0 = np.zeros(len(F))
+        for i in range(len(F)):
+            if forceType == "nodal":
+                if EP[i] == "X":
+                    EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[sys.BND_e]) / LNG_X
+                    nX += 1
+                    tX[i] = 1
+                    C0[i] = np.abs(SG[i] / EP[i])
+                elif EP[i] == "Y":
+                    EP[i] = np.mean(femData[prop.steps * (i + 1) - 1].u[sys.BND_n + sys.nNod]) / LNG_Y
+                    nY += 1
+                    tY[i] = 1
+                    C0[i] = np.abs(SG[i] / EP[i])
+            elif forceType == "displacement":
+                if EP[i] == "X":
+                    EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[sys.BND_e]) / LNG_Y
+                    nX += 1
+                    tX[i] = 1
+                    C0[i] = np.abs(EP[i] / SG[i])
+                elif EP[i] == "Y":
+                    EP[i] = np.sum(femData[prop.steps * (i + 1) - 1].r[sys.BND_n + sys.nNod]) / LNG_X
+                    nY += 1
+                    tY[i] = 1
+                    C0[i] = np.abs(EP[i] / SG[i])
 
-    
-    tX = tX[np.nonzero(tX)]
-    tY = tY[np.nonzero(tY)]
+        
+        tX = np.nonzero(tX)
+        tY = np.nonzero(tY)
 
-    if nX > nY:
-        prop.C0 = np.mean(*C0[tX])
-    elif nY > nX:
-        prop.C0 = np.mean(*C0[tY])
+        if nX > nY:
+            prop.C0 = np.mean(*C0[tX])
+        elif nY > nX:
+            prop.C0 = np.mean(*C0[tY])
+        else:
+            prop.C0 = np.mean(*C0[np.hstack((tX, tY))])
     else:
-        prop.C0 = np.mean(*C0[tX and tY])
+        prop.C0 = C0
 
     return femData, prop
 
@@ -466,7 +470,7 @@ def assembleDDIObject(sys, prop, femData, CType = "Diagonal", C0 = None, nStr = 
         d2 = femData[0].shape[1]
 
         for i in range(len(femData)):
-            femData[i].ee = matlib.repmat(femData[i].ee, 1, previousSteps + 1)
+            femData[i].ee = np.tile(femData[i].ee, (1, previousSteps + 1))
 
             for j in range(1,previousSteps + 1):
                 if i - j * skipSteps > 0:
