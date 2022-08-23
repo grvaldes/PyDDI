@@ -3968,3 +3968,7 @@ msh = {
 
 msh["MIN"] = np.amin(msh["POS"], axis = 0)
 msh["MAX"] = np.amax(msh["POS"], axis = 0)
+
+msh["TRIANGLES"][:,:-1] -= 1
+msh["LINES"][:,:-1] -= 1
+msh["NEIGH"] -= 1
