@@ -3,7 +3,7 @@ from pyDDI.functions import *
 from pyDDI.classes.SystemObject import SystemObject
 from pyDDI.functions.algorithms import generateDataLinearElastic
 
-import meshes.testElems3
+from meshes.testElems3 import msh
 
 mshT3 = {
     'POS' : np.array([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]]),
@@ -60,7 +60,7 @@ mshQ9 = {
     'NEIGH' : 0,
 }
 
-sys = SystemObject('PlaneStress', 'Triangle', 'Linear', meshes.testElems3.msh, nGaussPoints = 1, verbose = True)
+sys = SystemObject('PlaneStress', 'Triangle', 'Linear', msh, nGaussPoints = 1, verbose = True)
 print("\n\n")
 
 femData, prop = generateDataLinearElastic(sys, 'Linear')
