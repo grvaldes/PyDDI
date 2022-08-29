@@ -2,3 +2,4 @@ settings.json
 .vscode
 .gitignore
 venv/
+*__pycache__

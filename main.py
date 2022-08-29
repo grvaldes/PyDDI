@@ -63,4 +63,6 @@ mshQ9 = {
 sys = SystemObject('PlaneStress', 'Triangle', 'Linear', msh, nGaussPoints = 1, verbose = True)
 print("\n\n")
 
-femData, prop = generateDataLinearElastic(sys, 'Linear')
+femData, prop = generateDataLinearElastic(sys, 'Linear', Er = 20)
+
+print("We're here")

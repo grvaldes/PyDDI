@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import scipy.linalg
+import scipy.sparse.linalg
 from scipy import sparse
 from pyDDI.classes.DataObject import DataObject
 from pyDDI.classes.MaterialDatabase import MaterialDatabase
@@ -32,7 +33,7 @@ def solveSystemLinearElasticFEM(sys, prop):
         Kr = sol[i].K[np.ix_(np.logical_and(~rp, ~ud), np.logical_and(~rp, ~ud))]
         fr = sol[i].f[np.logical_and(~rp, ~ud)]
 
-        sol[i].u[np.logical_and(~rp, ~ud)] = sparse.linalg.spsolve(Kr, fr)
+        sol[i].u[np.logical_and(~rp, ~ud)] = scipy.sparse.linalg.spsolve(Kr, fr)
         sol[i].r[rp] = sol[i].K[rp,:] @ sol[i].u
 
         sol[i].eps = (sys.B @ sol[i].u).reshape((sys.ntIP, -1))

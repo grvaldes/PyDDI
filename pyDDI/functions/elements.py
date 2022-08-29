@@ -38,7 +38,7 @@ def FeMatricesBarTruss(X,EDGES,S):
 # @Output 
 def FeMatricesTri(XY,T20,order = 'T3',param = 1):
     Xe,We = hammerPointsTriangle(param)
-    We = We.reshape(-1,order = 'F')
+    We = We.ravel(order = 'F')
     Nipe = We.size
 
     if order == 'T3':
